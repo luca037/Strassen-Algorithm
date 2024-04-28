@@ -153,7 +153,7 @@ void exec_rmul(const int N) {
     rmul(&a, &b, &c);
     float end_time = (float)clock() / CLOCKS_PER_SEC;
 
-    printf("\ntime = %f\n", end_time - start_time);
+    printf("%d, %f\n", N,  end_time - start_time);
 
     //printf("\nMatrice C\n");
     //for (int i = 0; i < N; i++) {
