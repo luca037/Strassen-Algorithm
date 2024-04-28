@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define N 4096
-
 struct m_block {
     int col;
     int row;
@@ -170,7 +168,8 @@ void smul(struct m_block* A, struct m_block* B, struct m_block* C) {
     free(p7.matrix);
 }
 
-int main() {
+// Execute Strassen algorithm, print CPU time.
+void exec_strassen(const int N) {
     struct m_block a;
     a.dim_m = N; a.dim_b = N;
     a.col = 0; a.row = 0;
@@ -214,9 +213,7 @@ int main() {
     smul(&a, &b, &c);
     float end_time = (float)clock() / CLOCKS_PER_SEC;
 
-    smul(&a, &b, &c);
-
-    printf("\ntime = %f\n", end_time - start_time);
+    printf("%d, %f\n", N, end_time - start_time);
 
     //printf("\nMatrice C\n");
     //for (int i = 0; i < N; i++) {
@@ -228,8 +225,17 @@ int main() {
 
     // Dealloc
     free(a.matrix);
-
     free(b.matrix);
-
     free(c.matrix);
+}
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        printf("You need to specify the size (N).\n");
+        return 1;
+    }
+
+    exec_strassen(atoi(argv[1]));
+
+    return 0;
 }

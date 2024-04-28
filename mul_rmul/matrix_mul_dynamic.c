@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define N 4096
-
 struct m_block {
     int col;
     int row;
@@ -111,7 +109,7 @@ void rmul(struct m_block* A, struct m_block* B, struct m_block* C) {
     free(tmp1.matrix);
 }
 
-int main() {
+void exec_rmul(const int N) {
     struct m_block a;
     a.dim_m = N; a.dim_b = N;
     a.col = 0; a.row = 0;
@@ -155,8 +153,6 @@ int main() {
     rmul(&a, &b, &c);
     float end_time = (float)clock() / CLOCKS_PER_SEC;
 
-    rmul(&a, &b, &c);
-
     printf("\ntime = %f\n", end_time - start_time);
 
     //printf("\nMatrice C\n");
@@ -169,8 +165,17 @@ int main() {
 
     // Dealloc
     free(a.matrix);
-
     free(b.matrix);
-
     free(c.matrix);
+}
+
+int main(int argc, char* argv[]) {
+    if (argc != 2) {
+        printf("You need to specify the size (N).\n");
+        return 1;
+    }
+
+    exec_rmul(atoi(argv[1]));
+
+    return 0;
 }
