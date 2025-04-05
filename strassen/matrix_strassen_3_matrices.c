@@ -35,6 +35,7 @@ void smul(struct m_block* A, struct m_block* B, struct m_block* C) {
         return;
     }
 
+    // Blocks.
     struct m_block a11, a12, a21, a22;
 
     a11.matrix = A->matrix; a11.dim_m = A->dim_m;
@@ -89,83 +90,74 @@ void smul(struct m_block* A, struct m_block* B, struct m_block* C) {
     c22.dim_b = C->dim_b / 2;
     c22.row = C->dim_b / 2 + C->row; c22.col = C->dim_b / 2 + C->col;
 
-    struct m_block a1, a7;
+    // Strassen's blocks.
+    struct m_block a;
+    a.dim_b = a.dim_m = a12.dim_b;
+    a.col = a.row = 0;
+    a.matrix = (int*) malloc(a12.dim_b * a12.dim_b * sizeof(int));
 
-    a1.dim_b = a1.dim_m = a12.dim_b;
-    a1.col = a1.row = 0;
-    a1.matrix = (int*) malloc(a12.dim_b * a12.dim_b * sizeof(int));
+    struct m_block b;
+    b.dim_b = b.dim_m = b12.dim_b;
+    b.col = b.row = 0;
+    b.matrix = (int*) malloc(b12.dim_b * b12.dim_b * sizeof(int));
 
-    a7.dim_b = a7.dim_m = a12.dim_b;
-    a7.col = a7.row = 0;
-    a7.matrix = (int*) malloc(a12.dim_b * a12.dim_b * sizeof(int));
+    struct m_block p;
+    p.dim_b = p.dim_m = a.dim_b; p.col = p.row = 0;
+    p.matrix = (int*) malloc((a.dim_b * a.dim_b) * sizeof(int));
+    
+    // Clean up C.
+    for (int i = C->row; i < C->row + C->dim_b; i++) {
+        for (int j = C->col; j < C->col + C->dim_b; j++) {
+            C->matrix[i * C->dim_m + j] = 0;
+        }
+    }
 
-    struct m_block b5, b6;
+    // Compute p1 ad sum it to c11.
+    sub(&a12, &a22, &a); // a = a12 - a22
+    sum(&b21, &b22, &b); // b = b21 + b22
+    smul(&a,  &b,  &p);  // p = a * b
+    sum(&c11, &p, &c11); // c11 += p
 
-    b5.dim_b = b5.dim_m = b12.dim_b;
-    b5.col = b5.row = 0;
-    b5.matrix = (int*) malloc(b12.dim_b * b12.dim_b * sizeof(int));
+    // Compute p2 and sum it to c11 and c22.
+    sum(&a11, &a22, &a); // a = a11 + a22
+    sum(&b11, &b22, &b); // b = b11 + b22
+    smul(&a, &b, &p);    // p = a * b
+    sum(&c11, &p, &c11); // c11 += p
+    sum(&c22, &p, &c22); // c22 += p
 
-    b6.dim_b = b6.dim_m = b12.dim_b;
-    b6.col = b6.row = 0;
-    b6.matrix = (int*) malloc(b12.dim_b * b12.dim_b * sizeof(int));
+    // Compute p3 and sum it to c22.
+    sub(&a11, &a21, &a); // a = a11 - a21
+    sum(&b11, &b12, &b); // b = b11 + b12
+    smul(&a, &b, &p);    // p = a * b
+    sub(&c22, &p, &c22); // c22 -= p
 
-    struct m_block p4, p5, p6, p7;
-    p4.dim_b = p4.dim_m = a1.dim_b; p4.col = p4.row = 0;
-    p5.dim_b = p5.dim_m = a1.dim_b; p5.col = p5.row = 0;
-    p6.dim_b = p6.dim_m = a1.dim_b; p6.col = p6.row = 0;
-    p7.dim_b = p7.dim_m = a1.dim_b; p7.col = p7.row = 0;
+    // Compute p4 and sum it to c11 and c12.
+    sum(&a11, &a12, &a); // a = a11 + a12
+    smul(&a, &b22, &p);  // p = a * b22
+    sub(&c11, &p, &c11); // c11 -= p
+    sum(&c12, &p, &c12); // c12 += p
 
-    p4.matrix = (int*) malloc((a1.dim_b * a1.dim_b) * sizeof(int));
-    p5.matrix = (int*) malloc((a1.dim_b * a1.dim_b) * sizeof(int));
-    p6.matrix = (int*) malloc((a1.dim_b * a1.dim_b) * sizeof(int));
-    p7.matrix = (int*) malloc((a1.dim_b * a1.dim_b) * sizeof(int));
+    // Compute p5 and sum it to c12 and c22.
+    sub(&b12, &b22, &b); // b = b12 - b22
+    smul(&a11, &b, &p);  // p = a11 * b
+    sum(&c12, &p, &c12); // c12 += p
+    sum(&c22, &p, &c22); // c22 += p
 
-    sum(&a11, &a12, &a1);
-    sum(&a21, &a22, &a7);
+    // Compute p6 and sum it to c11 and c21.
+    sub(&b21, &b11, &b); // b = b21 - b11
+    smul(&a22, &b, &p);  // p = a22 * b
+    sum(&c11, &p, &c11); // c11 += p
+    sum(&c21, &p, &c21); // c21 += p
 
-    sub(&b12, &b22, &b5);
-    sub(&b21, &b11, &b6);
+    // Compute p7 and add it to c21 and c22.
+    sum(&a21, &a22, &a); // a = a21 + a22
+    smul(&a, &b11, &p);  // p = a * b11
+    sum(&c21, &p, &c21); // c21 += p
+    sub(&c22, &p, &c22); // c22 -= p
 
-    smul(&a1,  &b22, &p4); // a1 = a4
-    smul(&a11, &b5,  &p5);
-    smul(&a22, &b6,  &p6);
-    smul(&a7,  &b11, &p7);
-
-    // C12
-    sum(&p4, &p5, &c12);
-
-    // C21
-    sum(&p6, &p7, &c21);
-
-    // C11
-    sum(&p4, &p6, &c11); // primo pezzo c11
-    sub(&a12, &a22, &a1);
-    sum(&a11, &a22, &a7); // a7 = a2
-    sum(&b11, &b22, &b5); // b5 = b2
-    sum(&b21, &b22, &b6); // b6 = b1
-    smul(&a7,  &b5, &p4); // p4 = p2
-    smul(&a1,  &b6,  &p6); // p6 = p1
-    sub(&p4, &c11, &c11); // secondo pezzo c11
-    sum(&c11, &p6, &c11); // terzo pezzo c11
-
-    sub(&a11, &a21, &a1); // a1 = a3
-    sub(&b11, &b12, &b5); // b5 = b3
-    smul(&a1,  &b5,  &p6); // p6 = p3
-    // C22
-    sub(&p4, &p6, &c22);
-    sum(&c22, &p5, &c22);
-    sub(&c22, &p7, &c22);
-
-    free(a1.matrix);
-    free(a7.matrix);
-
-    free(b5.matrix);
-    free(b6.matrix);
-
-    free(p4.matrix);
-    free(p5.matrix);
-    free(p6.matrix);
-    free(p7.matrix);
+    free(a.matrix);
+    free(b.matrix);
+    free(p.matrix);
 }
 
 // Execute Strassen algorithm, print CPU time.
@@ -215,13 +207,13 @@ void exec_strassen(const int N) {
 
     printf("%d, %f\n", N, end_time - start_time);
 
-    //printf("\nMatrice C\n");
-    //for (int i = 0; i < N; i++) {
-    //    for (int j = 0; j < N; j++) {
-    //        printf("%d ", c.matrix[i * N + j]);
-    //    }
-    //    printf("\n");
-    //}
+    printf("\nMatrice C\n");
+    for (int i = 0; i < N; i++) {
+        for (int j = 0; j < N; j++) {
+            printf("%d ", c.matrix[i * N + j]);
+        }
+        printf("\n");
+    }
 
     // Dealloc
     free(a.matrix);
