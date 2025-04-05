@@ -3,9 +3,4 @@
 - **mul_rmul/matrix_mul_static.c**: Matrix multiplication using the definition algorithm. This version uses the `struct m_block`.
 - **mul_rmul/matrix_mul_dynamic.c**: Matrix multiplication using the definition algorithm. This version uses dynamic allocation and the `struct m_block`.
 - **strassen/matrix_strassen.c**: Matrix multiplication using the Strassen algorithm.
-- **strassen/matrix_strassen_less_matrices.c**: Version of **strassen/matrix_strassen.c** that uses less memory.
-
-## Results
-![](./results.png)
-- SMUL is the Strassen algorithm.
-- RMUL is the definition algorithm (recursive version).
+- **strassen/matrix_strassen_3_matrices.c**: Version of **strassen/matrix_strassen.c** that uses 3 temporary matrices.
