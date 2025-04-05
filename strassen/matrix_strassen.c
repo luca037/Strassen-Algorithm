@@ -255,8 +255,6 @@ int main() {
     smul(&a, &b, &c);
     float end_time = (float)clock() / CLOCKS_PER_SEC;
 
-    smul(&a, &b, &c);
-
     printf("\ntime = %f\n", end_time - start_time);
 
     //printf("\nMatrice C\n");
