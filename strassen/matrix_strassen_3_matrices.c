@@ -207,13 +207,13 @@ void exec_strassen(const int N) {
 
     printf("%d, %f\n", N, end_time - start_time);
 
-    printf("\nMatrice C\n");
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            printf("%d ", c.matrix[i * N + j]);
-        }
-        printf("\n");
-    }
+    //printf("\nMatrice C\n");
+    //for (int i = 0; i < N; i++) {
+    //    for (int j = 0; j < N; j++) {
+    //        printf("%d ", c.matrix[i * N + j]);
+    //    }
+    //    printf("\n");
+    //}
 
     // Dealloc
     free(a.matrix);
