@@ -1,3 +1,7 @@
 a.out
 *.csv
 run_tests.py
+matrix_mul_def.c
+matrix_mul_static.c
+sum_matrices_blocks_test.c
+matrix_strassen_def_version.c
