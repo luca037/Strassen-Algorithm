@@ -1,6 +1,6 @@
 # Strassen-Algorithm
 - **recursive_multiplication/matrix_recursive_mul.c**: Implements the definition algoritm (recursive version).
-- **mul_rmul/matrix_mul_static.c**: Implements the Strassen algorithm.
+- **strasssen_algorithm/matrix_strassen_mul.c**: Implements the Strassen algorithm.
 
 ## The algorithm
 We aim to comtpue $C = A \times B$, where $C, A, B \in \mathcal R^{n\times n}$ and $n$ is a power of 2.
@@ -57,4 +57,11 @@ SMUL(A, B)
     C22 = P2 - P3 + P5 - P7
 
     return C
+```
+
+### Usage
+Compile and execute:
+```
+gcc strasssen_algorithm/matrix_strassen_mul.c -O3
+./a.out
 ```
