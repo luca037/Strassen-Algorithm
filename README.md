@@ -1,11 +1,8 @@
 # Strassen-Algorithm
-- **mul_rmul/matrix_mul_def.c**: Matrix multiplication using the definition algorithm (both iterative and recursive).
-- **mul_rmul/matrix_mul_static.c**: Matrix multiplication using the definition algorithm. This version uses the `struct m_block`.
-- **mul_rmul/matrix_mul_dynamic.c**: Matrix multiplication using the definition algorithm. This version uses dynamic allocation and the `struct m_block`.
-- **strassen/matrix_strassen.c**: Matrix multiplication using the Strassen algorithm.
-- **strassen/matrix_strassen_3_matrices.c**: Version of **strassen/matrix_strassen.c** that uses 3 temporary matrices.
+- **recursive_multiplication/matrix_recursive_mul.c**: Implements the definition algoritm (recursive version).
+- **mul_rmul/matrix_mul_static.c**: Implements the Strassen algorithm.
 
-## Strassen Algoritm
+## The algorithm
 We aim to comtpue $C = A \times B$, where $C, A, B \in \mathcal R^{n\times n}$ and $n$ is a power of 2.
 Consider:
 ```math
@@ -40,4 +37,24 @@ In the end we get:
         & C_{21} = P_6 + P_7\\
         & C_{22} = P_2 - P_3 + P_5 - P_7\\
     \end{split}
+```
+
+The algorithm:
+```text
+SMUL(A, B) 
+    n = rows(A)
+    if (n = 1) then 
+        return [a11 b11] // Scalar product.
+
+    Compute the matrices Ai, Bi for all i = 1, ..., 7
+    
+    for all i = 1 to 7 do
+        Pi = SMUL(Ai, Bi)
+
+    C11 = P1 + P2 - P4 + P6
+    C12 = P4 + P5
+    C21 = P6 + P7
+    C22 = P2 - P3 + P5 - P7
+
+    return C
 ```
