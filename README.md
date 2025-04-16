@@ -65,3 +65,8 @@ Compile and execute:
 gcc strasssen_algorithm/matrix_strassen_mul.c -O3
 ./a.out
 ```
+
+## Results
+CPU: AMD Ryzen™ 5 7600
+
+![Strassen Timing Results](results_pc.png)
