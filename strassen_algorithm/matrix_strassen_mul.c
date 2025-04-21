@@ -1,7 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <string.h>
 
+// Sub-matrix block.
 struct m_block {
     int col;
     int row;
@@ -10,107 +12,96 @@ struct m_block {
     int* matrix;
 };
 
+// Allocate a matrix.
+struct m_block make_alloc_block(int dim_b) {
+    struct m_block block;
+    block.row = 0;
+    block.col = 0;
+    block.dim_b = block.dim_m = dim_b;
+    block.matrix = (int*) malloc(dim_b * dim_b * sizeof(int));
+    return block;
+}
+
+// Crate a sub-matrix block.
+struct m_block make_block(struct m_block* parent, int row_offset, int col_offset, int dim_b) {
+    struct m_block block;
+    block.matrix = parent->matrix;
+    block.dim_m = parent->dim_m;
+    block.dim_b = dim_b;
+    block.row = parent->row + row_offset;
+    block.col = parent->col + col_offset;
+    return block;
+}
+
 // Iterative sum.
-void sum(struct m_block* a, struct m_block* b, struct m_block* c) {
-    for (int ia = a->row, ib = b->row, ic = c->row; (ia < a->row + a->dim_b) && (ib < b->row + b->dim_b) && (ic < c->row + c->dim_b); ia++, ib++, ic++) {
-        for (int ja = a->col, jb = b->col, jc = c->col; (ja < a->col + a->dim_b) && (jb < b->col + b->dim_b) && (jc < c->col + c->dim_b); ja++, jb++, jc++) {
-            c->matrix[ic * c->dim_m + jc] = a->matrix[ia * a->dim_m + ja] + b->matrix[ib * b->dim_m + jb];
+void sum(struct m_block* restrict a, struct m_block* restrict b, struct m_block* restrict c) {
+    int* pa = &a->matrix[a->row * a->dim_m + a->col];
+    int* pb = &b->matrix[b->row * b->dim_m + b->col];
+    int* pc = &c->matrix[c->row * c->dim_m + c->col];
+    for (int i = 0; i < a->dim_b; ++i) {
+        for (int j = 0; j < a->dim_b; ++j) {
+            *pc = *pa + *pb;
+            ++pa; ++pb; ++pc;
         }
+        pa += a->dim_m - a->dim_b;
+        pb += b->dim_m - b->dim_b;
+        pc += c->dim_m - c->dim_b;
     }
 }
 
 // Iterative sub.
-void sub(struct m_block* a, struct m_block* b, struct m_block* c) {
-    for (int ia = a->row, ib = b->row, ic = c->row; (ia < a->row + a->dim_b) && (ib < b->row + b->dim_b) && (ic < c->row + c->dim_b); ia++, ib++, ic++) {
-        for (int ja = a->col, jb = b->col, jc = c->col; (ja < a->col + a->dim_b) && (jb < b->col + b->dim_b) && (jc < c->col + c->dim_b); ja++, jb++, jc++) {
-            c->matrix[ic * c->dim_m + jc] = a->matrix[ia * a->dim_m + ja] - b->matrix[ib * b->dim_m + jb];
+void sub(struct m_block* restrict a, struct m_block* restrict b, struct m_block* restrict c) {
+    int* pa = &a->matrix[a->row * a->dim_m + a->col];
+    int* pb = &b->matrix[b->row * b->dim_m + b->col];
+    int* pc = &c->matrix[c->row * c->dim_m + c->col];
+    for (int i = 0; i < a->dim_b; ++i) {
+        for (int j = 0; j < a->dim_b; ++j) {
+            *pc = *pa - *pb;
+            ++pa; ++pb; ++pc;
         }
+        pa += a->dim_m - a->dim_b;
+        pb += b->dim_m - b->dim_b;
+        pc += c->dim_m - c->dim_b;
     }
 }
 
 // Recursive multipy matrices C = A * B.
-void smul(struct m_block* A, struct m_block* B, struct m_block* C) {
-    if (A->dim_b == 1 && B->dim_b == 1 && C->dim_b == 1) {
-        C->matrix[C->row * C->dim_m + C->col] = A->matrix[A->row * A->dim_m + A->col] * B->matrix[B->row * B->dim_m + B->col];
+void smul(struct m_block* restrict A, struct m_block* restrict B, struct m_block* restrict C) {
+    if (A->dim_b == 1) {
+        int a_val = A->matrix[A->row * A->dim_m + A->col];
+        int b_val = B->matrix[B->row * B->dim_m + B->col];
+        C->matrix[C->row * C->dim_m + C->col] = a_val * b_val;
         return;
     }
 
-    // Blocks.
-    struct m_block a11, a12, a21, a22;
+    // Blocks size.
+    int half = A->dim_b / 2;
 
-    a11.matrix = A->matrix; a11.dim_m = A->dim_m;
-    a11.dim_b = A->dim_b / 2;
-    a11.row = 0 + A->row; a11.col = 0 + A->col;
+    // Blocks of matrix A.
+    struct m_block a11 = make_block(A, 0,      0,     half);
+    struct m_block a12 = make_block(A, 0,      half,  half);
+    struct m_block a21 = make_block(A, half,   0,     half);
+    struct m_block a22 = make_block(A, half,   half,  half);
 
-    a12.matrix = A->matrix; a12.dim_m = A->dim_m;
-    a12.dim_b = A->dim_b / 2;
-    a12.row = 0 + A->row; a12.col = A->dim_b / 2 + A->col;
+    // Blocks of matrix B.
+    struct m_block b11 = make_block(B, 0,      0,    half);
+    struct m_block b12 = make_block(B, 0,      half, half);
+    struct m_block b21 = make_block(B, half,   0,    half);
+    struct m_block b22 = make_block(B, half,   half, half);
 
-    a21.matrix = A->matrix; a21.dim_m = A->dim_m;
-    a21.dim_b = A->dim_b / 2;
-    a21.row = A->dim_b / 2 + A->row; a21.col = 0 + A->col;
+    // Blocks of matrix C.
+    struct m_block c11 = make_block(C, 0,      0,    half);
+    struct m_block c12 = make_block(C, 0,      half, half);
+    struct m_block c21 = make_block(C, half,   0,    half);
+    struct m_block c22 = make_block(C, half,   half, half);
 
-    a22.matrix = A->matrix; a22.dim_m = A->dim_m;
-    a22.dim_b = A->dim_b / 2;
-    a22.row = A->dim_b / 2 + A->row; a22.col = A->dim_b / 2 + A->col;
+    // Tmp blocks to compute the Strassen's operations.
+    struct m_block a = make_alloc_block(half);
+    struct m_block b = make_alloc_block(half);
+    struct m_block p = make_alloc_block(half);
 
-    struct m_block b11, b12, b21, b22;
-
-    b11.matrix = B->matrix; b11.dim_m = B->dim_m;
-    b11.dim_b = B->dim_b / 2;
-    b11.row = 0 + B->row; b11.col = 0 + B->col;
-
-    b12.matrix = B->matrix; b12.dim_m = B->dim_m;
-    b12.dim_b = B->dim_b / 2;
-    b12.row = 0 + B->row; b12.col = B->dim_b / 2 + B->col;
-
-    b21.matrix = B->matrix; b21.dim_m = B->dim_m;
-    b21.dim_b = B->dim_b / 2;
-    b21.row = B->dim_b / 2 + B->row; b21.col = 0 + B->col;
-
-    b22.matrix = B->matrix; b22.dim_m = B->dim_m;
-    b22.dim_b = B->dim_b / 2;
-    b22.row = B->dim_b / 2 + B->row; b22.col = B->dim_b / 2 + B->col;
-
-    struct m_block c11, c12, c21, c22;
-
-    c11.matrix = C->matrix; c11.dim_m = C->dim_m;
-    c11.dim_b = C->dim_b / 2;
-    c11.row = 0 + C->row; c11.col = 0 + C->col;
-
-    c12.matrix = C->matrix; c12.dim_m = C->dim_m;
-    c12.dim_b = C->dim_b / 2;
-    c12.row = 0 + C->row; c12.col = C->dim_b / 2 + C->col;
-
-    c21.matrix = C->matrix; c21.dim_m = C->dim_m;
-    c21.dim_b = C->dim_b / 2;
-    c21.row = C->dim_b / 2 + C->row; c21.col = 0 + C->col;
-
-    c22.matrix = C->matrix; c22.dim_m = C->dim_m;
-    c22.dim_b = C->dim_b / 2;
-    c22.row = C->dim_b / 2 + C->row; c22.col = C->dim_b / 2 + C->col;
-
-    // Strassen's blocks.
-    struct m_block a;
-    a.dim_b = a.dim_m = a12.dim_b;
-    a.col = a.row = 0;
-    a.matrix = (int*) malloc(a12.dim_b * a12.dim_b * sizeof(int));
-
-    struct m_block b;
-    b.dim_b = b.dim_m = b12.dim_b;
-    b.col = b.row = 0;
-    b.matrix = (int*) malloc(b12.dim_b * b12.dim_b * sizeof(int));
-
-    struct m_block p;
-    p.dim_b = p.dim_m = a.dim_b; p.col = p.row = 0;
-    p.matrix = (int*) malloc((a.dim_b * a.dim_b) * sizeof(int));
-    
     // Clean up C.
-    for (int i = C->row; i < C->row + C->dim_b; i++) {
-        for (int j = C->col; j < C->col + C->dim_b; j++) {
-            C->matrix[i * C->dim_m + j] = 0;
-        }
-    }
+    memset(C->matrix, 0, C->dim_m * C->dim_m * sizeof(int));
 
     // Compute p1 ad sum it to c11.
     sub(&a12, &a22, &a); // a = a12 - a22
@@ -162,44 +153,37 @@ void smul(struct m_block* A, struct m_block* B, struct m_block* C) {
 
 // Execute Strassen algorithm, print CPU time.
 void exec_strassen(const int N) {
-    struct m_block a;
-    a.dim_m = N; a.dim_b = N;
-    a.col = 0; a.row = 0;
-    a.matrix = (int*) malloc((N * N) * sizeof(int));
+    struct m_block a = {
+        0,
+        0,
+        N,
+        N,
+        (int*) malloc((N * N) * sizeof(int))
+    };
 
-    //printf("Matrice A\n");
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            a.matrix[i * N + j] = 1;
-            //printf("%d ", a.matrix[i * N + j]);
-        }
-        //printf("\n");
+    struct m_block b = {
+        0,
+        0,
+        N,
+        N,
+        (int*) malloc((N * N) * sizeof(int))
+    };
+
+    // Init matrices A, B with ones.
+    for (int i = 0; i < N * N; i++) {
+        a.matrix[i] = 1;
+        b.matrix[i] = 1;
     }
 
-    struct m_block b;
-    b.dim_m = N; b.dim_b = N;
-    b.col = 0; b.row = 0;
-    b.matrix = (int*) malloc((N * N) *  sizeof(int));
+    struct m_block c = {
+        0,
+        0,
+        N,
+        N,
+        (int*) malloc((N * N) * sizeof(int))
+    };
 
-    //printf("Matrice B\n");
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            b.matrix[i * N + j] = 1;
-            //printf("%d ", b.matrix[i][j]);
-        }
-        //printf("\n");
-    }
-
-    struct m_block c;
-    c.dim_m = N; c.dim_b = N;
-    c.col = 0; c.row = 0;
-    c.matrix = (int*) malloc((N * N) * sizeof(int));
-
-    for (int i = 0; i < N; i++) {
-        for (int j = 0; j < N; j++) {
-            c.matrix[i * N + j] = 0;
-        }
-    }
+    // Matrix C is cleaned up in smul.
 
     float start_time = (float)clock() / CLOCKS_PER_SEC;
     smul(&a, &b, &c);
