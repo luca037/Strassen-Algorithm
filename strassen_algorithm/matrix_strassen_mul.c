@@ -153,21 +153,8 @@ void smul(struct m_block* restrict A, struct m_block* restrict B, struct m_block
 
 // Execute Strassen algorithm, print CPU time.
 void exec_strassen(const int N) {
-    struct m_block a = {
-        0,
-        0,
-        N,
-        N,
-        (int*) malloc((N * N) * sizeof(int))
-    };
-
-    struct m_block b = {
-        0,
-        0,
-        N,
-        N,
-        (int*) malloc((N * N) * sizeof(int))
-    };
+    struct m_block a = make_alloc_block(N);
+    struct m_block b = make_alloc_block(N);
 
     // Init matrices A, B with ones.
     for (int i = 0; i < N * N; i++) {
@@ -175,13 +162,7 @@ void exec_strassen(const int N) {
         b.matrix[i] = 1;
     }
 
-    struct m_block c = {
-        0,
-        0,
-        N,
-        N,
-        (int*) malloc((N * N) * sizeof(int))
-    };
+    struct m_block c = make_alloc_block(N);
 
     // Matrix C is cleaned up in smul.
 
