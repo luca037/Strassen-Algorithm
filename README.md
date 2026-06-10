@@ -2,6 +2,13 @@
 - **recursive_multiplication/matrix_recursive_mul.c**: Implements the definition algoritm (recursive version).
 - **strasssen_algorithm/matrix_strassen_mul.c**: Implements the Strassen algorithm.
 
+---
+
+https://github.com/user-attachments/assets/cee5813d-8d14-4d88-a699-59ffc83c296b
+
+---
+
+
 ## The algorithm
 We aim to comtpue $C = A \times B$, where $C, A, B \in \mathcal R^{n\times n}$ and $n$ is a power of 2.
 Consider:
